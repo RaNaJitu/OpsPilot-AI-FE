@@ -1,3 +1,97 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root,
+html.light {
+  --app-bg: #f8fafc;
+  --app-bg-elevated: #ffffff;
+  --app-text: #0f172a;
+  --app-text-muted: #64748b;
+  --app-border: #e2e8f0;
+  --app-header-bg: #ffffff;
+  --app-sidebar-bg: #ffffff;
+  --app-brand: #2563eb;
+  --app-brand-secondary: #4f46e5;
+  --app-success: #10b981;
+  --app-warning: #f59e0b;
+  --app-danger: #ef4444;
+  --app-menu-bg: #ffffff;
+  --app-toggle-bg: #f1f5f9;
+  --app-toggle-text: #0f172a;
+  --app-nav-hover: #f1f5f9;
+  --app-nav-active-bg: #2563eb;
+  --app-nav-active-text: #ffffff;
+  --app-input-bg: #f8fafc;
+}
+
+html.dark {
+  --app-bg: #0b1220;
+  --app-bg-elevated: #111827;
+  --app-text: #f8fafc;
+  --app-text-muted: #94a3b8;
+  --app-border: #1e293b;
+  --app-header-bg: #111827;
+  --app-sidebar-bg: #0f172a;
+  --app-brand: #3b82f6;
+  --app-brand-secondary: #6366f1;
+  --app-success: #34d399;
+  --app-warning: #fbbf24;
+  --app-danger: #f87171;
+  --app-menu-bg: #111827;
+  --app-toggle-bg: #1e293b;
+  --app-toggle-text: #f8fafc;
+  --app-nav-hover: #1e293b;
+  --app-nav-active-bg: #2563eb;
+  --app-nav-active-text: #ffffff;
+  --app-input-bg: #1e293b;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Auth / login atmosphere */
+.auth-shell {
+  background-color: var(--app-bg);
+  overflow: hidden;
+}
+
+.auth-shell__glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, color-mix(in srgb, var(--app-brand) 22%, transparent), transparent 60%),
+    radial-gradient(ellipse 45% 40% at 100% 20%, color-mix(in srgb, var(--app-brand-secondary) 16%, transparent), transparent 55%),
+    radial-gradient(ellipse 40% 35% at 0% 80%, color-mix(in srgb, var(--app-brand) 12%, transparent), transparent 50%);
+}
+
+html.dark .auth-shell__glow {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, color-mix(in srgb, var(--app-brand) 28%, transparent), transparent 60%),
+    radial-gradient(ellipse 45% 40% at 100% 20%, color-mix(in srgb, var(--app-brand-secondary) 22%, transparent), transparent 55%),
+    radial-gradient(ellipse 40% 35% at 0% 80%, color-mix(in srgb, var(--app-brand) 14%, transparent), transparent 50%);
+}
+
+.auth-shell__grid {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background-image: radial-gradient(color-mix(in srgb, var(--app-text-muted) 28%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 75% 65% at 50% 40%, black 20%, transparent 75%);
+}
+
+html.dark .auth-shell__grid {
+  opacity: 0.25;
+}

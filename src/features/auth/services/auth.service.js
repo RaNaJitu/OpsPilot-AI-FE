@@ -6,7 +6,7 @@ export const googleLogin = (idToken) =>
   });
 
 export const getProfile = () =>
-  api.get("/auth/profile");
+  api.post("/auth/profile");
 
 export const logout = () =>
   api.post("/auth/logout");
