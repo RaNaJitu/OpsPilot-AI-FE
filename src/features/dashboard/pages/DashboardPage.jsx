@@ -1,41 +1,16 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 
 import EmptyState from "../../../components/common/EmptyState";
+import ErrorState from "../../../components/feedback/ErrorState";
+import { useIncidents } from "../../../hooks/useIncidents";
+import IncidentCard from "../../incidents/components/IncidentCard";
+import IncidentListSkeleton from "../../incidents/components/IncidentListSkeleton";
+import { useDeleteIncident } from "../../../hooks/useDeleteIncident";
+import ConfirmDialog from "../../../components/ui/ConfirmDialog";
+import { useMemo, useState } from "react";
 import { getProfile } from "../../auth/services/auth.service";
-
-const stats = [
-  {
-    label: "Total Incidents",
-    value: "0",
-    hint: "No incidents yet",
-    tone: "var(--app-text)",
-  },
-  {
-    label: "Critical",
-    value: "0",
-    hint: "Today",
-    tone: "var(--app-danger)",
-  },
-  {
-    label: "Healthy Services",
-    value: "—",
-    hint: "Awaiting data",
-    tone: "var(--app-success)",
-  },
-  {
-    label: "AI Tokens Used",
-    value: "0",
-    hint: "This month",
-    tone: "var(--app-brand)",
-  },
-];
-
-const healthItems = [
-  { label: "Critical", value: "0", color: "var(--app-danger)" },
-  { label: "Warning", value: "0", color: "var(--app-warning)" },
-  { label: "Resolved", value: "0", color: "var(--app-success)" },
-];
+import { useQuery } from "@tanstack/react-query";
 
 function firstName(name) {
   if (!name) return "there";
@@ -43,40 +18,102 @@ function firstName(name) {
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await getProfile();
-        if (!cancelled) setUser(data?.data?.user ?? null);
-      } catch {
-        // TopNavbar already handles auth redirect
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const profileQuery = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data } = await getProfile();
+      return data?.data?.user ?? null;
+    },
+  });
+
+  const { data, isLoading, isError, refetch } = useIncidents({ page: 1, limit: 5 });
+  const deleteMutation = useDeleteIncident();
+
+  const incidents = data?.data ?? [];
+  const pagination = data?.pagination;
+
+  const stats = useMemo(() => {
+    const total = pagination?.total ?? incidents.length;
+    const critical = incidents.filter((item) => item.severity === "CRITICAL").length;
+    const completed = incidents.filter((item) => item.status === "COMPLETED").length;
+    const pending = incidents.filter((item) => item.status === "PENDING").length;
+
+    return [
+      {
+        label: "Total Incidents",
+        value: String(total),
+        hint: total === 0 ? "No incidents yet" : "All time",
+        tone: "var(--app-text)",
+      },
+      {
+        label: "Critical",
+        value: String(critical),
+        hint: "In recent list",
+        tone: "var(--app-danger)",
+      },
+      {
+        label: "Completed",
+        value: String(completed),
+        hint: "Analyzed",
+        tone: "var(--app-success)",
+      },
+      {
+        label: "Pending",
+        value: String(pending),
+        hint: "Awaiting analysis",
+        tone: "var(--app-warning)",
+      },
+    ];
+  }, [incidents, pagination]);
+
+  const healthItems = [
+    {
+      label: "Critical",
+      value: String(incidents.filter((i) => i.severity === "CRITICAL").length),
+      color: "var(--app-danger)",
+    },
+    {
+      label: "Warning",
+      value: String(incidents.filter((i) => i.severity === "MEDIUM" || i.severity === "HIGH").length),
+      color: "var(--app-warning)",
+    },
+    {
+      label: "Resolved",
+      value: String(incidents.filter((i) => i.status === "COMPLETED").length),
+      color: "var(--app-success)",
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-8 p-4 md:p-6 lg:p-8 xl:max-w-[1600px]">
-      <header>
-        <p className="text-sm font-medium" style={{ color: "var(--app-text-muted)" }}>
-          Dashboard
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
-          Welcome back, {firstName(user?.name)} 👋
-        </h1>
-        <p
-          className="mt-2 max-w-xl whitespace-pre-line text-sm leading-relaxed md:text-base"
-          style={{ color: "var(--app-text-muted)" }}
-        >
-          {`Monitor production incidents,
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-medium" style={{ color: "var(--app-text-muted)" }}>
+            Dashboard
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
+            Welcome back, {firstName(profileQuery.data?.name)} 👋
+          </h1>
+          <p
+            className="mt-2 max-w-xl whitespace-pre-line text-sm leading-relaxed md:text-base"
+            style={{ color: "var(--app-text-muted)" }}
+          >
+            {`Monitor production incidents,
 identify root causes,
 and reduce MTTR using AI.`}
-        </p>
+          </p>
+        </div>
+
+        <Link
+          to="/upload"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+          style={{ backgroundColor: "var(--app-brand)" }}
+        >
+          <Plus size={16} strokeWidth={2.2} />
+          Upload Incident
+        </Link>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -106,21 +143,39 @@ and reduce MTTR using AI.`}
         <div className="lg:col-span-2">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold">Recent Incidents</h2>
-            <Link
-              to="/incidents"
-              className="text-sm font-medium"
-              style={{ color: "var(--app-brand)" }}
-            >
+            <Link to="/incidents" className="text-sm font-medium" style={{ color: "var(--app-brand)" }}>
               View all
             </Link>
           </div>
-          <EmptyState
-            compact
-            title="No incidents analyzed yet"
-            description="Upload your first production log to get AI-powered root cause analysis."
-            actionLabel="Upload Log"
-            actionTo="/incidents"
-          />
+
+          {isLoading ? (
+            <IncidentListSkeleton count={3} />
+          ) : isError ? (
+            <ErrorState
+              title="Couldn't load incidents"
+              description="Please try again."
+              onRetry={() => refetch()}
+            />
+          ) : incidents.length === 0 ? (
+            <EmptyState
+              compact
+              title="No incidents analyzed yet"
+              description="Upload your first production log to get AI-powered root cause analysis."
+              actionLabel="Upload Log"
+              actionTo="/upload"
+            />
+          ) : (
+            <div className="space-y-3">
+              {incidents.map((incident) => (
+                <IncidentCard
+                  key={incident.id}
+                  incident={incident}
+                  deleting={deleteMutation.isPending && pendingDelete?.id === incident.id}
+                  onDelete={setPendingDelete}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div
@@ -144,7 +199,7 @@ and reduce MTTR using AI.`}
                     style={{ backgroundColor: item.color }}
                     aria-hidden="true"
                   />
-                  <span style={{ color: "var(--app-text)" }}>{item.label}</span>
+                  <span>{item.label}</span>
                 </span>
                 <span className="font-semibold" style={{ color: item.color }}>
                   {item.value}
@@ -162,6 +217,25 @@ and reduce MTTR using AI.`}
           </Link>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete Incident?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={deleteMutation.isPending}
+        onCancel={() => {
+          if (!deleteMutation.isPending) setPendingDelete(null);
+        }}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          deleteMutation.mutate(pendingDelete.id, {
+            onSuccess: () => setPendingDelete(null),
+            onError: () => setPendingDelete(null),
+          });
+        }}
+      />
     </div>
   );
 }

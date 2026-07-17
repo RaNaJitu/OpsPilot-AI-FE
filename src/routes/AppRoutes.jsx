@@ -9,6 +9,8 @@ import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import HistoryPage from "../features/dashboard/pages/HistoryPage";
 import SettingsPage from "../features/dashboard/pages/SettingsPage";
 import IncidentsPage from "../features/incidents/pages/IncidentsPage";
+import UploadIncidentPage from "../features/incidents/pages/UploadIncidentPage";
+import IncidentDetailsPage from "../features/incidents/pages/IncidentDetailsPage";
 import AiChatPage from "../features/ai/pages/AiChatPage";
 
 export default function AppRoutes() {
@@ -20,7 +22,9 @@ export default function AppRoutes() {
 
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/upload" element={<UploadIncidentPage />} />
         <Route path="/incidents" element={<IncidentsPage />} />
+        <Route path="/incidents/:incidentId" element={<IncidentDetailsPage />} />
         <Route path="/ai" element={<AiChatPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
