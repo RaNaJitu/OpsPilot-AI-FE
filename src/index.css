@@ -95,3 +95,35 @@ html.dark .auth-shell__glow {
 html.dark .auth-shell__grid {
   opacity: 0.25;
 }
+
+/* Landing page entrance */
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-hero {
+  animation: landing-fade-up 0.55s ease-out both;
+}
+
+.landing-features {
+  animation: landing-fade-up 0.55s ease-out 0.12s both;
+}
+
+.landing-signin {
+  animation: landing-fade-up 0.55s ease-out 0.22s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero,
+  .landing-features,
+  .landing-signin {
+    animation: none;
+  }
+}

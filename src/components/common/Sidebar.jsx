@@ -13,8 +13,8 @@ import Logo from "./Logo";
 const links = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/incidents", label: "Incidents", icon: AlertTriangle },
-  { to: "/ai", label: "AI Chat", icon: Bot },
-  { to: "/history", label: "History", icon: History },
+  { to: "/assistant", label: "Incident Assistant", icon: Bot },
+  { to: "/history", label: "Incident History", icon: History },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

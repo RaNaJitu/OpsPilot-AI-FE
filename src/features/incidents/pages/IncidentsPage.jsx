@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
@@ -10,10 +10,15 @@ import { useIncidents } from "../../../hooks/useIncidents";
 import IncidentCard from "../components/IncidentCard";
 import IncidentListSkeleton from "../components/IncidentListSkeleton";
 
+const SEARCH_DEBOUNCE_MS = 400;
+
 export default function IncidentsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
+
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(urlSearch);
+  const [search, setSearch] = useState(urlSearch.trim());
   const [pendingDelete, setPendingDelete] = useState(null);
 
   const { data, isLoading, isError, isFetching, refetch } = useIncidents({
@@ -23,13 +28,34 @@ export default function IncidentsPage() {
   });
   const deleteMutation = useDeleteIncident();
 
+  // Keep input in sync when navigating via navbar / shared links
+  useEffect(() => {
+    setSearchInput((current) => (current === urlSearch ? current : urlSearch));
+    setSearch(urlSearch.trim());
+    setPage(1);
+  }, [urlSearch]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
+      const next = searchInput.trim();
       setPage(1);
-      setSearch(searchInput.trim());
-    }, 300);
+      setSearch(next);
+
+      if (next === urlSearch.trim()) return;
+
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          if (next) params.set("search", next);
+          else params.delete("search");
+          return params;
+        },
+        { replace: true }
+      );
+    }, SEARCH_DEBOUNCE_MS);
+
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, urlSearch, setSearchParams]);
 
   const incidents = data?.data ?? [];
   const pagination = data?.pagination;

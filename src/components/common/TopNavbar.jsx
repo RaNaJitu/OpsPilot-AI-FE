@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { getProfile, logout } from "../../features/auth/services/auth.service";
 import ThemeToggle from "./ThemeToggle";
 import UserAvatar from "./UserAvatar";
+
+const SEARCH_DEBOUNCE_MS = 400;
 
 function MenuIcon() {
   return (
@@ -46,11 +48,44 @@ function ChevronDown() {
 
 export default function TopNavbar({ onMenuClick }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const menuRef = useRef(null);
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(
+    () => searchParams.get("search") || ""
+  );
+
+  useEffect(() => {
+    if (location.pathname === "/incidents") {
+      setSearchInput(searchParams.get("search") || "");
+    }
+  }, [location.pathname, searchParams]);
+
+  useEffect(() => {
+    const next = searchInput.trim();
+    const timer = setTimeout(() => {
+      if (location.pathname === "/incidents") {
+        const current = searchParams.get("search") || "";
+        if (current === next) return;
+        if (next) {
+          navigate(`/incidents?search=${encodeURIComponent(next)}`, { replace: true });
+        } else {
+          navigate("/incidents", { replace: true });
+        }
+        return;
+      }
+
+      // From other pages: only navigate once the user has typed a query
+      if (!next) return;
+      navigate(`/incidents?search=${encodeURIComponent(next)}`);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, location.pathname, searchParams, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,13 +151,15 @@ export default function TopNavbar({ onMenuClick }) {
           <MenuIcon />
         </button>
 
-        <label className="relative hidden min-w-0 max-w-md flex-1 sm:block">
+        <label className="relative min-w-0 max-w-md flex-1">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--app-text-muted)" }}>
             <SearchIcon />
           </span>
           <input
             type="search"
-            placeholder="Search incidents, logs, services..."
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search incidents..."
             className="w-full rounded-lg border py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[var(--app-brand)]"
             style={{
               backgroundColor: "var(--app-input-bg)",

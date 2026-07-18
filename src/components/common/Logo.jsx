@@ -12,7 +12,7 @@ const sizes = {
   xl: "w-[400px] max-w-full",
 };
 
-export default function Logo({ to = "/dashboard", size = "md", className = "" }) {
+export default function Logo({ to = "/", size = "md", className = "" }) {
   const { isDark } = useTheme();
   const sizeClass = sizes[size] ?? sizes.md;
 

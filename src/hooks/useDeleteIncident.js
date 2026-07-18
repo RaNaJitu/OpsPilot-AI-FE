@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { deleteIncident } from "../services/incident.service";
+import { dashboardKeys } from "../features/dashboard/utils/queryKeys";
 import { incidentKeys } from "../features/incidents/utils/queryKeys";
 
 export const useDeleteIncident = () => {
@@ -11,6 +12,7 @@ export const useDeleteIncident = () => {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: incidentKeys.lists() });
       queryClient.removeQueries({ queryKey: incidentKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 };

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, FileText, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Bot, Download, FileText, Sparkles, Trash2 } from "lucide-react";
 
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import Spinner from "../../../components/ui/Spinner";
@@ -8,6 +8,7 @@ import ErrorState from "../../../components/feedback/ErrorState";
 import Loading from "../../../components/feedback/Loading";
 import { useAnalyzeIncident } from "../../../hooks/useAnalyzeIncident";
 import { useDeleteIncident } from "../../../hooks/useDeleteIncident";
+import { useGenerateRunbook } from "../../../hooks/useGenerateRunbook";
 import { useIncident } from "../../../hooks/useIncident";
 import {
   formatFileSize,
@@ -15,15 +16,13 @@ import {
   formatRelativeTime,
   shortIncidentId,
 } from "../utils/incidentFormat";
+import { exportIncidentPdf } from "../utils/exportIncidentPdf";
 import { SeverityBadge, StatusBadge } from "../components/IncidentBadges";
 import AiAnalysisCard from "../components/AiAnalysisCard";
+import RunbookCard from "../components/RunbookCard";
 
-function getAnalyzeErrorMessage(error) {
-  return (
-    error?.response?.data?.message ||
-    error?.message ||
-    "AI analysis failed. Please try again."
-  );
+function getApiErrorMessage(error, fallback) {
+  return error?.response?.data?.message || error?.message || fallback;
 }
 
 export default function IncidentDetailsPage() {
@@ -31,6 +30,7 @@ export default function IncidentDetailsPage() {
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [analyzeError, setAnalyzeError] = useState("");
+  const [runbookError, setRunbookError] = useState("");
   const [analysisDurationSec, setAnalysisDurationSec] = useState(null);
 
   const { data, isLoading, isError, refetch, isFetching } = useIncident(incidentId, {
@@ -39,10 +39,12 @@ export default function IncidentDetailsPage() {
   });
   const deleteMutation = useDeleteIncident();
   const analyzeMutation = useAnalyzeIncident();
+  const runbookMutation = useGenerateRunbook(incidentId);
 
   const incident = data?.data;
   const isAnalyzing =
     analyzeMutation.isPending || incident?.status === "ANALYZING";
+  const canUseAiExtras = incident?.status === "COMPLETED";
 
   const handleDelete = () => {
     deleteMutation.mutate(incidentId, {
@@ -60,10 +62,27 @@ export default function IncidentDetailsPage() {
         setAnalysisDurationSec(Number(elapsed.toFixed(2)));
       },
       onError: (error) => {
-        setAnalyzeError(getAnalyzeErrorMessage(error));
+        setAnalyzeError(
+          getApiErrorMessage(error, "AI analysis failed. Please try again.")
+        );
         refetch();
       },
     });
+  };
+
+  const handleGenerateRunbook = () => {
+    setRunbookError("");
+    runbookMutation.mutate(undefined, {
+      onError: (error) => {
+        setRunbookError(
+          getApiErrorMessage(error, "Couldn't generate runbook. Please try again.")
+        );
+      },
+    });
+  };
+
+  const handleExportPdf = () => {
+    exportIncidentPdf(incident);
   };
 
   if (isLoading) {
@@ -128,6 +147,27 @@ export default function IncidentDetailsPage() {
             {isAnalyzing ? "Analyzing..." : "Analyze with AI"}
           </button>
 
+          {canUseAiExtras && (
+            <Link
+              to={`/assistant?incidentId=${incident.id}`}
+              className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition hover:opacity-90"
+              style={{ borderColor: "var(--app-border)", color: "var(--app-brand)" }}
+            >
+              <Bot size={15} />
+              Ask Assistant
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition hover:opacity-90"
+            style={{ borderColor: "var(--app-border)", color: "var(--app-text)" }}
+          >
+            <Download size={15} />
+            Export PDF
+          </button>
+
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
@@ -167,6 +207,14 @@ export default function IncidentDetailsPage() {
       )}
 
       <AiAnalysisCard incident={incident} analysisDurationSec={analysisDurationSec} />
+
+      <RunbookCard
+        runbook={incident.runbook}
+        canGenerate={canUseAiExtras}
+        generating={runbookMutation.isPending}
+        generateError={runbookError}
+        onGenerate={handleGenerateRunbook}
+      />
 
       <section
         className="rounded-2xl border p-5 md:p-6"
