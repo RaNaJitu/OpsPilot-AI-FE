@@ -174,7 +174,7 @@ export default function IncidentHistoryPage() {
           type="search"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search..."
+          placeholder="Search by title, service or category..."
           className="w-full rounded-lg border py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--app-brand)]"
           style={{
             backgroundColor: "var(--app-input-bg)",
@@ -241,11 +241,15 @@ export default function IncidentHistoryPage() {
         />
       ) : incidents.length === 0 ? (
         <EmptyState
-          title={hasActiveFilters ? "No matching incidents" : "No incident history yet"}
+          title={
+            hasActiveFilters
+              ? "No matching incidents"
+              : "No incidents uploaded yet."
+          }
           description={
             hasActiveFilters
               ? "Try adjusting your search or filters."
-              : "Upload and analyze incidents to build your investigation history."
+              : "Upload your first log to start AI analysis."
           }
           actionLabel={hasActiveFilters ? undefined : "Upload Incident"}
           actionTo={hasActiveFilters ? undefined : "/upload"}
@@ -254,8 +258,12 @@ export default function IncidentHistoryPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
-              {pagination?.total ?? incidents.length} incident
-              {(pagination?.total ?? incidents.length) === 1 ? "" : "s"}
+              {pagination?.total
+                ? `Showing ${(pagination.page - 1) * pagination.limit + 1}–${Math.min(
+                    pagination.page * pagination.limit,
+                    pagination.total
+                  )} of ${pagination.total}`
+                : `${incidents.length} incidents`}
               {isFetching && !isLoading ? " · Updating…" : ""}
             </p>
           </div>

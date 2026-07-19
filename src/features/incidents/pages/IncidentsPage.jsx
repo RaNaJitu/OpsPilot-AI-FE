@@ -12,6 +12,14 @@ import IncidentListSkeleton from "../components/IncidentListSkeleton";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
+function paginationLabel(pagination) {
+  if (!pagination?.total) return null;
+  const { page, limit, total } = pagination;
+  const start = total === 0 ? 0 : (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
+  return `Showing ${start}–${end} of ${total}`;
+}
+
 export default function IncidentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSearch = searchParams.get("search") || "";
@@ -28,7 +36,6 @@ export default function IncidentsPage() {
   });
   const deleteMutation = useDeleteIncident();
 
-  // Keep input in sync when navigating via navbar / shared links
   useEffect(() => {
     setSearchInput((current) => (current === urlSearch ? current : urlSearch));
     setSearch(urlSearch.trim());
@@ -60,6 +67,7 @@ export default function IncidentsPage() {
   const incidents = data?.data ?? [];
   const pagination = data?.pagination;
   const deletingId = deleteMutation.isPending ? pendingDelete?.id : null;
+  const rangeLabel = paginationLabel(pagination);
 
   const handleConfirmDelete = () => {
     if (!pendingDelete) return;
@@ -75,7 +83,7 @@ export default function IncidentsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Incidents</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--app-text-muted)" }}>
-            Review uploaded logs, status, and investigation history.
+            Review uploaded logs, AI analysis, and investigation history.
           </p>
         </div>
         <Link
@@ -91,7 +99,7 @@ export default function IncidentsPage() {
       <label className="relative block max-w-xl">
         <span
           className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: "var(--app-text-muted)" }}
+          style={{ color: "var(--app-brand)" }}
         >
           <Search size={16} />
         </span>
@@ -99,11 +107,11 @@ export default function IncidentsPage() {
           type="search"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search incidents..."
-          className="w-full rounded-lg border py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--app-brand)]"
+          placeholder="Search by title, service or category..."
+          className="w-full rounded-lg border-2 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--app-brand)]"
           style={{
-            backgroundColor: "var(--app-input-bg)",
-            borderColor: "var(--app-border)",
+            backgroundColor: "var(--app-bg-elevated)",
+            borderColor: "color-mix(in srgb, var(--app-brand) 28%, var(--app-border))",
             color: "var(--app-text)",
           }}
         />
@@ -119,22 +127,26 @@ export default function IncidentsPage() {
         />
       ) : incidents.length === 0 ? (
         <EmptyState
-          title={search ? "No matching incidents" : "No incidents yet"}
+          title={
+            search ? "No matching incidents" : "No incidents uploaded yet."
+          }
           description={
             search
-              ? "Try a different search term."
-              : "Upload your first production log to get AI-powered root cause analysis."
+              ? "Try a different title, service, or category."
+              : "Upload your first log to start AI analysis."
           }
           actionLabel={search ? undefined : "Upload Incident"}
           actionTo={search ? undefined : "/upload"}
         />
       ) : (
         <div className="space-y-3">
-          {isFetching && !isLoading && (
-            <p className="text-xs" style={{ color: "var(--app-text-muted)" }}>
-              Updating...
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
+              {rangeLabel}
+              {isFetching && !isLoading ? " · Updating…" : ""}
             </p>
-          )}
+          </div>
+
           {incidents.map((incident) => (
             <IncidentCard
               key={incident.id}
@@ -147,7 +159,7 @@ export default function IncidentsPage() {
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between gap-3 pt-2">
               <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
-                Page {pagination.page} of {pagination.totalPages} · {pagination.total} total
+                Page {pagination.page} of {pagination.totalPages}
               </p>
               <div className="flex gap-2">
                 <button

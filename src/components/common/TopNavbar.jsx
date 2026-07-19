@@ -105,7 +105,7 @@ export default function TopNavbar({ onMenuClick }) {
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search incidents..."
+            placeholder="Search by title, service or category..."
             className="w-full rounded-lg border-2 py-2.5 pl-9 pr-3 text-sm font-medium outline-none transition focus:border-[var(--app-brand)]"
             style={{
               backgroundColor: "var(--app-bg-elevated)",
