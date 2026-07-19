@@ -13,8 +13,12 @@ const AUTH_SKIP_REFRESH = [
   "/auth/logout",
 ];
 
-/** Only expired/invalid access tokens should trigger refresh — not "not logged in". */
+/**
+ * Access cookie missing OR invalid/expired → try refresh.
+ * Refresh cookie may still be valid when the access cookie is gone.
+ */
 const REFRESHABLE_401_CODES = new Set([
+  "ACCESS_TOKEN_MISSING",
   "INVALID_ACCESS_TOKEN",
   "TOKEN_EXPIRED",
 ]);
@@ -35,7 +39,7 @@ const shouldSkipRefresh = (url = "") =>
 
 const isRefreshableAuthError = (code) => REFRESHABLE_401_CODES.has(code);
 
-const redirectToLogin = () => {
+const redirectToLanding = () => {
   if (window.location.pathname !== "/") {
     window.location.assign("/");
   }
@@ -46,7 +50,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
-    const errorCode = error.response?.data?.code || null;
+    // Backend uses `error` (e.g. ACCESS_TOKEN_MISSING); accept `code` as fallback.
+    const errorCode =
+      error.response?.data?.error || error.response?.data?.code || null;
 
     if (
       status !== 401 ||
@@ -68,13 +74,12 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      // Cookies are httpOnly — refresh uses refreshToken cookie automatically
       await api.post("/auth/refresh-token");
       processQueue(null);
       return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError);
-      redirectToLogin();
+      redirectToLanding();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
