@@ -12,6 +12,8 @@ import IncidentHistoryPage from "../features/incidents/pages/IncidentHistoryPage
 import UploadIncidentPage from "../features/incidents/pages/UploadIncidentPage";
 import IncidentDetailsPage from "../features/incidents/pages/IncidentDetailsPage";
 import IncidentAssistantPage from "../features/ai/pages/IncidentAssistantPage";
+import NotFoundPage from "../features/errors/pages/NotFoundPage";
+import ForbiddenPage from "../features/errors/pages/ForbiddenPage";
 
 export default function AppRoutes() {
   return (
@@ -31,7 +33,11 @@ export default function AppRoutes() {
         <Route path="/history" element={<IncidentHistoryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/forbidden" element={<ForbiddenPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

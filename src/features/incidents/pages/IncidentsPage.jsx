@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { FolderOpen, Plus, SearchX } from "lucide-react";
 
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/feedback/ErrorState";
+import { describeApiError } from "../../../utils/apiError";
+import { appToast } from "../../../utils/toast";
 import { useDeleteIncident } from "../hooks/useDeleteIncident";
 import { useIncidents } from "../hooks/useIncidents";
 import IncidentCard from "../components/IncidentCard";
@@ -25,12 +27,13 @@ export default function IncidentsPage() {
   const [page, setPage] = useState(1);
   const [pendingDelete, setPendingDelete] = useState(null);
 
-  const { data, isLoading, isError, isFetching, refetch } = useIncidents({
+  const { data, isLoading, isError, error, isFetching, refetch } = useIncidents({
     page,
     limit: 10,
     search,
   });
   const deleteMutation = useDeleteIncident();
+  const loadError = describeApiError(error, "Couldn't load incidents");
 
   useEffect(() => {
     setPage(1);
@@ -44,8 +47,14 @@ export default function IncidentsPage() {
   const handleConfirmDelete = () => {
     if (!pendingDelete) return;
     deleteMutation.mutate(pendingDelete.id, {
-      onSuccess: () => setPendingDelete(null),
-      onError: () => setPendingDelete(null),
+      onSuccess: () => {
+        appToast.success("Incident archived");
+        setPendingDelete(null);
+      },
+      onError: () => {
+        appToast.error("Couldn't delete incident");
+        setPendingDelete(null);
+      },
     });
   };
 
@@ -74,21 +83,22 @@ export default function IncidentsPage() {
         <IncidentListSkeleton />
       ) : isError ? (
         <ErrorState
-          title="Couldn't load incidents"
-          description="Check your connection and try again."
+          variant={loadError.variant}
+          title={loadError.title}
+          description={loadError.description}
+          retryLabel={loadError.retryLabel}
           onRetry={() => refetch()}
         />
       ) : incidents.length === 0 ? (
         <EmptyState
-          title={
-            search ? "No matching incidents" : "No incidents uploaded yet."
-          }
+          icon={search ? SearchX : FolderOpen}
+          title={search ? "No matching incidents" : "No incidents yet"}
           description={
             search
               ? "Try a different incident, service, category, or severity."
-              : "Upload your first log to start AI analysis."
+              : "Upload your first production log to start AI analysis."
           }
-          actionLabel={search ? undefined : "Upload Incident"}
+          actionLabel={search ? undefined : "Upload your first log"}
           actionTo={search ? undefined : "/upload"}
         />
       ) : (

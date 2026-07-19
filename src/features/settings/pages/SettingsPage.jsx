@@ -9,7 +9,8 @@ import {
 
 import UserAvatar from "../../../components/common/UserAvatar";
 import ErrorState from "../../../components/feedback/ErrorState";
-import Loading from "../../../components/feedback/Loading";
+import { SettingsPageSkeleton } from "../../../components/feedback/PageSkeleton";
+import { describeApiError } from "../../../utils/apiError";
 import config from "../../../config";
 import { useLogout } from "../../auth/hooks/useLogout";
 import { useProfile } from "../../auth/hooks/useProfile";
@@ -93,15 +94,21 @@ export default function SettingsPage() {
   const { logoutUser, isLoggingOut } = useLogout();
 
   if (profileQuery.isLoading) {
-    return <Loading label="Loading settings..." />;
+    return <SettingsPageSkeleton />;
   }
 
   if (profileQuery.isError) {
+    const loadError = describeApiError(
+      profileQuery.error,
+      "Couldn't load settings"
+    );
     return (
       <div className="mx-auto max-w-3xl p-4 md:p-6 lg:p-8">
         <ErrorState
-          title="Couldn't load settings"
-          description="Your session may have expired. Try signing in again."
+          variant={loadError.variant}
+          title={loadError.title}
+          description={loadError.description}
+          retryLabel={loadError.retryLabel}
           onRetry={() => profileQuery.refetch()}
         />
       </div>

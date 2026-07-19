@@ -5,7 +5,9 @@ import { ArrowLeft, Bot, Download, FileText, Sparkles, Trash2 } from "lucide-rea
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import Spinner from "../../../components/ui/Spinner";
 import ErrorState from "../../../components/feedback/ErrorState";
-import Loading from "../../../components/feedback/Loading";
+import { DetailPageSkeleton } from "../../../components/feedback/PageSkeleton";
+import { describeApiError, getApiErrorMessage } from "../../../utils/apiError";
+import { appToast } from "../../../utils/toast";
 import { useAnalyzeIncident } from "../hooks/useAnalyzeIncident";
 import { useDeleteIncident } from "../hooks/useDeleteIncident";
 import { useGenerateRunbook } from "../hooks/useGenerateRunbook";
@@ -22,10 +24,6 @@ import { SeverityBadge, StatusBadge } from "../components/IncidentBadges";
 import AiAnalysisCard from "../components/AiAnalysisCard";
 import RunbookCard from "../components/RunbookCard";
 
-function getApiErrorMessage(error, fallback) {
-  return error?.response?.data?.message || error?.message || fallback;
-}
-
 export default function IncidentDetailsPage() {
   const { incidentId } = useParams();
   const navigate = useNavigate();
@@ -34,13 +32,14 @@ export default function IncidentDetailsPage() {
   const [runbookError, setRunbookError] = useState("");
   const [analysisDurationSec, setAnalysisDurationSec] = useState(null);
 
-  const { data, isLoading, isError, refetch, isFetching } = useIncident(incidentId, {
+  const { data, isLoading, isError, error, refetch, isFetching } = useIncident(incidentId, {
     refetchInterval: (query) =>
       query.state.data?.data?.status === "ANALYZING" ? 3000 : false,
   });
   const deleteMutation = useDeleteIncident();
   const analyzeMutation = useAnalyzeIncident();
   const runbookMutation = useGenerateRunbook(incidentId);
+  const loadError = describeApiError(error, "Couldn't load incident");
 
   const incident = data?.data;
   const confidence = incident ? formatConfidenceLabel(incident.confidence) : null;
@@ -50,7 +49,11 @@ export default function IncidentDetailsPage() {
 
   const handleDelete = () => {
     deleteMutation.mutate(incidentId, {
-      onSuccess: () => navigate("/incidents", { replace: true }),
+      onSuccess: () => {
+        appToast.success("Incident archived");
+        navigate("/incidents", { replace: true });
+      },
+      onError: () => appToast.error("Couldn't delete incident"),
     });
   };
 
@@ -62,11 +65,13 @@ export default function IncidentDetailsPage() {
       onSuccess: () => {
         const elapsed = (performance.now() - startedAt) / 1000;
         setAnalysisDurationSec(Number(elapsed.toFixed(2)));
+        appToast.success("AI analysis completed");
       },
-      onError: (error) => {
+      onError: (err) => {
         setAnalyzeError(
-          getApiErrorMessage(error, "AI analysis failed. Please try again.")
+          getApiErrorMessage(err, "AI analysis failed. Please try again.")
         );
+        appToast.error("AI analysis failed");
         refetch();
       },
     });
@@ -75,28 +80,37 @@ export default function IncidentDetailsPage() {
   const handleGenerateRunbook = () => {
     setRunbookError("");
     runbookMutation.mutate(undefined, {
-      onError: (error) => {
+      onSuccess: () => appToast.success("Runbook generated"),
+      onError: (err) => {
         setRunbookError(
-          getApiErrorMessage(error, "Couldn't generate runbook. Please try again.")
+          getApiErrorMessage(err, "Couldn't generate runbook. Please try again.")
         );
+        appToast.error("Couldn't generate runbook");
       },
     });
   };
 
   const handleExportPdf = () => {
     exportIncidentPdf(incident);
+    appToast.success("PDF exported");
   };
 
   if (isLoading) {
-    return <Loading label="Loading incident..." />;
+    return <DetailPageSkeleton />;
   }
 
   if (isError || !incident) {
     return (
       <div className="mx-auto max-w-3xl p-4 md:p-6 lg:p-8">
         <ErrorState
-          title="Incident not found"
-          description="It may have been deleted, or you don't have access."
+          variant={isError ? loadError.variant : "notFound"}
+          title={isError ? loadError.title : "Incident not found"}
+          description={
+            isError
+              ? loadError.description
+              : "It may have been deleted, or you don't have access."
+          }
+          retryLabel={isError ? loadError.retryLabel : "Try again"}
           onRetry={() => refetch()}
         />
         <div className="mt-4">
@@ -200,9 +214,13 @@ export default function IncidentDetailsPage() {
       </div>
 
       {analyzeError && (
-        <p className="text-sm" style={{ color: "var(--app-danger)" }}>
-          ❌ {analyzeError}
-        </p>
+        <ErrorState
+          variant="ai"
+          title="AI Analysis Failed"
+          description={analyzeError}
+          retryLabel="Retry"
+          onRetry={handleAnalyze}
+        />
       )}
 
       {isAnalyzing && (

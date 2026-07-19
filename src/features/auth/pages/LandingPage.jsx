@@ -16,6 +16,7 @@ import {
 import Logo from "../../../components/common/Logo";
 import ThemeToggle from "../../../components/common/ThemeToggle";
 import Spinner from "../../../components/ui/Spinner";
+import { appToast } from "../../../utils/toast";
 import LandingFooter from "../components/LandingFooter";
 import LandingHeroShot from "../components/LandingHeroShot";
 import LandingPreviewStrip from "../components/LandingPreviewStrip";
@@ -171,10 +172,12 @@ export default function LandingPage() {
 
     try {
       await googleLogin(response.credential);
+      appToast.success("Login successful");
       navigate("/dashboard", { replace: true });
     } catch (err) {
       console.error(err);
       setError("Sign-in failed. Please try again.");
+      appToast.error("Login failed");
       setIsSigningIn(false);
     }
   };

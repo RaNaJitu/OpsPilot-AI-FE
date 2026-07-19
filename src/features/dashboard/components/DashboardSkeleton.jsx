@@ -6,13 +6,14 @@ function Block({ className = "" }) {
         backgroundColor: "var(--app-bg-elevated)",
         borderColor: "var(--app-border)",
       }}
+      aria-hidden="true"
     />
   );
 }
 
 export default function DashboardSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy="true" aria-label="Loading dashboard">
       <div className="grid gap-3 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Block key={`qa-${i}`} className="h-16" />

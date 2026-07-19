@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, X } from "lucide-react";
 
+import ErrorState from "../../../components/feedback/ErrorState";
+import { describeApiError } from "../../../utils/apiError";
+import { appToast } from "../../../utils/toast";
 import { useUploadIncident } from "../hooks/useUploadIncident";
 import UploadZone, { validateLogFile } from "../components/UploadZone";
 
@@ -42,6 +45,7 @@ export default function UploadIncidentPage() {
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState("");
   const [formError, setFormError] = useState("");
+  const [uploadFailed, setUploadFailed] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const isUploading = mutation.isPending;
@@ -54,12 +58,14 @@ export default function UploadIncidentPage() {
     const validationError = validateLogFile(nextFile);
     setFileError(validationError || "");
     setFormError("");
+    setUploadFailed(false);
     setFile(validationError ? null : nextFile);
   };
 
   const handleUpload = (event) => {
     event.preventDefault();
     setFormError("");
+    setUploadFailed(false);
 
     if (!title.trim()) {
       setFormError("Incident title is required.");
@@ -90,6 +96,7 @@ export default function UploadIncidentPage() {
       {
         onSuccess: (payload) => {
           const incidentId = payload?.data?.id;
+          appToast.success("Incident uploaded");
           if (incidentId) {
             navigate(`/incidents/${incidentId}`);
             return;
@@ -97,8 +104,15 @@ export default function UploadIncidentPage() {
           setFormError("Upload succeeded but incident id was missing.");
         },
         onError: (error) => {
-          setFormError(getErrorMessage(error));
+          const offline = describeApiError(error);
+          const message =
+            offline.variant === "offline"
+              ? offline.description
+              : getErrorMessage(error);
+          setFormError(message);
+          setUploadFailed(true);
           setProgress(0);
+          appToast.error("Upload failed");
         },
       }
     );
@@ -210,11 +224,22 @@ export default function UploadIncidentPage() {
           </div>
         )}
 
-        {formError && (
+        {uploadFailed && formError ? (
+          <ErrorState
+            variant="upload"
+            title="Upload Failed"
+            description={formError}
+            retryLabel="Try Again"
+            onRetry={() => {
+              const fakeEvent = { preventDefault() {} };
+              handleUpload(fakeEvent);
+            }}
+          />
+        ) : formError ? (
           <p className="text-sm" style={{ color: "var(--app-danger)" }}>
-            ❌ {formError}
+            {formError}
           </p>
-        )}
+        ) : null}
 
         <button
           type="submit"

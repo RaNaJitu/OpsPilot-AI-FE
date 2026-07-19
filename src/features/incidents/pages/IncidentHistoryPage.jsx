@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { FolderOpen, Search, SearchX, X } from "lucide-react";
 
 import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/feedback/ErrorState";
+import { describeApiError } from "../../../utils/apiError";
 import { useIncidents } from "../hooks/useIncidents";
 import HistoryIncidentRow from "../components/HistoryIncidentRow";
 import IncidentListSkeleton from "../components/IncidentListSkeleton";
@@ -91,7 +92,7 @@ export default function IncidentHistoryPage() {
     [datePreset]
   );
 
-  const { data, isLoading, isError, isFetching, refetch } = useIncidents({
+  const { data, isLoading, isError, error, isFetching, refetch } = useIncidents({
     page,
     limit: 10,
     search,
@@ -116,6 +117,7 @@ export default function IncidentHistoryPage() {
 
   const incidents = data?.data ?? [];
   const pagination = data?.pagination;
+  const loadError = describeApiError(error, "Couldn't load history");
 
   useEffect(() => {
     setKnownCategories((prev) => {
@@ -235,23 +237,24 @@ export default function IncidentHistoryPage() {
         <IncidentListSkeleton />
       ) : isError ? (
         <ErrorState
-          title="Couldn't load history"
-          description="Check your connection and try again."
+          variant={loadError.variant}
+          title={loadError.title}
+          description={loadError.description}
+          retryLabel={loadError.retryLabel}
           onRetry={() => refetch()}
         />
       ) : incidents.length === 0 ? (
         <EmptyState
+          icon={hasActiveFilters ? SearchX : FolderOpen}
           title={
-            hasActiveFilters
-              ? "No matching incidents"
-              : "No incidents uploaded yet."
+            hasActiveFilters ? "No matching incidents" : "No incidents yet"
           }
           description={
             hasActiveFilters
               ? "Try adjusting your search or filters."
-              : "Upload your first log to start AI analysis."
+              : "Upload your first production log to build history."
           }
-          actionLabel={hasActiveFilters ? undefined : "Upload Incident"}
+          actionLabel={hasActiveFilters ? undefined : "Upload your first log"}
           actionTo={hasActiveFilters ? undefined : "/upload"}
         />
       ) : (

@@ -4,7 +4,12 @@ import { Bot, Eraser, FileText, MessageSquare } from "lucide-react";
 
 import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/feedback/ErrorState";
-import Spinner from "../../../components/ui/Spinner";
+import {
+  AssistantSidebarSkeleton,
+  ChatThreadSkeleton,
+} from "../../../components/feedback/PageSkeleton";
+import { describeApiError } from "../../../utils/apiError";
+import { appToast } from "../../../utils/toast";
 import {
   CategoryBadge,
   SeverityBadge,
@@ -114,7 +119,10 @@ export default function IncidentAssistantPage() {
     setDraft("");
     sendMutation.mutate(message, {
       onSettled: () => setPendingUserMessage(""),
-      onError: (error) => setSendError(getChatErrorMessage(error)),
+      onError: (error) => {
+        setSendError(getChatErrorMessage(error));
+        appToast.error("Couldn't send message");
+      },
     });
   };
 
@@ -181,15 +189,13 @@ export default function IncidentAssistantPage() {
 
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
             {incidentsQuery.isLoading ? (
-              <div className="flex justify-center py-8">
-                <Spinner />
-              </div>
+              <AssistantSidebarSkeleton />
             ) : analyzedIncidents.length === 0 ? (
               <EmptyState
                 compact
-                title="No analyzed incidents"
-                description="Upload a log and run AI analysis first."
-                actionLabel="Upload Incident"
+                title="No analyzed incidents yet"
+                description="Upload a production log and run AI analysis first."
+                actionLabel="Upload your first log"
                 actionTo="/upload"
               />
             ) : (
@@ -385,22 +391,18 @@ export default function IncidentAssistantPage() {
                 </div>
               </div>
             ) : historyQuery.isLoading ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2">
-                <Spinner />
-                <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
-                  Loading conversation…
-                </p>
-              </div>
+              <ChatThreadSkeleton />
             ) : historyBlocked ? (
               <ErrorState
+                variant="ai"
                 title="Analysis required"
                 description="Run AI analysis on this incident before using the assistant."
+                retryLabel="Retry"
                 onRetry={() => historyQuery.refetch()}
               />
             ) : historyQuery.isError ? (
               <ErrorState
-                title="Couldn't load chat"
-                description={getChatErrorMessage(historyQuery.error)}
+                {...describeApiError(historyQuery.error, "Couldn't load chat")}
                 onRetry={() => historyQuery.refetch()}
               />
             ) : showEmptyConversation ? (

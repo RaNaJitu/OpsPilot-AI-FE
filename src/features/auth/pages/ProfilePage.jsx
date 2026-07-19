@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import UserAvatar from "../../../components/common/UserAvatar";
 import ErrorState from "../../../components/feedback/ErrorState";
-import Loading from "../../../components/feedback/Loading";
+import { ProfilePageSkeleton } from "../../../components/feedback/PageSkeleton";
+import { describeApiError } from "../../../utils/apiError";
 import { useProfile } from "../hooks/useProfile";
 
 function formatJoinedDate(value) {
@@ -25,14 +26,20 @@ export default function ProfilePage() {
     }
   }, [profileQuery.isError, navigate]);
 
-  if (profileQuery.isLoading) return <Loading label="Loading profile..." />;
+  if (profileQuery.isLoading) return <ProfilePageSkeleton />;
 
   if (profileQuery.isError || !profileQuery.data) {
+    const loadError = describeApiError(
+      profileQuery.error,
+      "Couldn't load profile"
+    );
     return (
       <div className="mx-auto max-w-3xl p-4 md:p-6 lg:p-8">
         <ErrorState
-          title="Couldn't load profile"
-          description="Your session may have expired."
+          variant={loadError.variant}
+          title={loadError.title}
+          description={loadError.description}
+          retryLabel={loadError.retryLabel}
           onRetry={() => profileQuery.refetch()}
         />
       </div>

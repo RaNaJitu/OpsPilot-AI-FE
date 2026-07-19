@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import ErrorState from "../../../components/feedback/ErrorState";
+import { describeApiError } from "../../../utils/apiError";
 import { useDashboard } from "../hooks/useDashboard";
 import CategoryBarChart from "../components/CategoryBarChart";
 import DashboardSkeleton from "../components/DashboardSkeleton";
@@ -12,8 +13,9 @@ import StatCards from "../components/StatCards";
 import TopServicesList from "../components/TopServicesList";
 
 export default function DashboardPage() {
-  const { data, isLoading, isError, refetch, isFetching } = useDashboard();
+  const { data, isLoading, isError, error, refetch, isFetching } = useDashboard();
   const dashboard = data?.data;
+  const loadError = describeApiError(error, "Couldn't load dashboard");
 
   const { runbookHref, assistantHref } = useMemo(() => {
     const completed = (dashboard?.recentIncidents ?? []).find(
@@ -46,8 +48,10 @@ export default function DashboardPage() {
         <DashboardSkeleton />
       ) : isError || !dashboard ? (
         <ErrorState
-          title="Couldn't load dashboard"
-          description="The dashboard API is unavailable. Please try again."
+          variant={loadError.variant}
+          title={loadError.title}
+          description={loadError.description}
+          retryLabel={loadError.retryLabel}
           onRetry={() => refetch()}
         />
       ) : (

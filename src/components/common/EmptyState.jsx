@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { FolderOpen } from "lucide-react";
 
 export default function EmptyState({
   title,
@@ -6,6 +7,7 @@ export default function EmptyState({
   actionLabel,
   actionTo,
   onAction,
+  icon: Icon = FolderOpen,
   compact = false,
 }) {
   return (
@@ -19,27 +21,15 @@ export default function EmptyState({
       }}
     >
       <div
-        className={`flex items-center justify-center rounded-full ${
-          compact ? "mb-3 h-10 w-10" : "mb-4 h-12 w-12"
+        className={`flex items-center justify-center rounded-2xl ${
+          compact ? "mb-3 h-11 w-11" : "mb-4 h-14 w-14"
         }`}
         style={{
           backgroundColor: "color-mix(in srgb, var(--app-brand) 12%, transparent)",
           color: "var(--app-brand)",
         }}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M12 16V8M8 12h8"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"
-            stroke="currentColor"
-            strokeWidth="1.6"
-          />
-        </svg>
+        <Icon size={compact ? 20 : 26} strokeWidth={1.8} aria-hidden="true" />
       </div>
       <h3 className="text-base font-semibold">{title}</h3>
       <p
