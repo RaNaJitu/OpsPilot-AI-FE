@@ -19,7 +19,7 @@ import Spinner from "../../../components/ui/Spinner";
 import LandingFooter from "../components/LandingFooter";
 import LandingHeroShot from "../components/LandingHeroShot";
 import LandingPreviewStrip from "../components/LandingPreviewStrip";
-import { getProfile, googleLogin } from "../services/auth.service";
+import { googleLogin } from "../services/auth.service";
 
 const TRUSTED = [
   "AI Analysis",
@@ -127,29 +127,11 @@ export default function LandingPage() {
   const buttonWrapRef = useRef(null);
   const [buttonWidth, setButtonWidth] = useState(280);
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        await getProfile();
-        if (!cancelled) navigate("/dashboard", { replace: true });
-      } catch {
-        if (!cancelled) setCheckingSession(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate]);
-
-  useEffect(() => {
     const el = buttonWrapRef.current;
-    if (!el || checkingSession) return;
+    if (!el) return;
 
     const updateWidth = () => {
       const width = Math.floor(el.getBoundingClientRect().width);
@@ -160,16 +142,15 @@ export default function LandingPage() {
     const observer = new ResizeObserver(updateWidth);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [checkingSession]);
+  }, []);
 
   useEffect(() => {
-    if (checkingSession) return;
     if (window.location.hash === "#sign-in" || window.location.hash === "#get-started") {
       requestAnimationFrame(() => {
         getStartedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       });
     }
-  }, [checkingSession]);
+  }, []);
 
   const scrollToGetStarted = () => {
     getStartedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -202,20 +183,6 @@ export default function LandingPage() {
     setError("Google sign-in was cancelled or failed.");
     setIsSigningIn(false);
   };
-
-  if (checkingSession) {
-    return (
-      <div
-        className="flex min-h-screen items-center justify-center"
-        style={{ backgroundColor: "var(--app-bg)", color: "var(--app-text)" }}
-      >
-        <div className="inline-flex items-center gap-2 text-sm" style={{ color: "var(--app-text-muted)" }}>
-          <Spinner size="sm" />
-          Loading OpsPilot…
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="auth-shell relative min-h-screen" style={{ color: "var(--app-text)" }}>
