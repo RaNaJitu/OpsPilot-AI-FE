@@ -139,6 +139,28 @@ html.dark .auth-shell__grid {
   animation: landing-fade-up 0.55s ease-out 0.26s both;
 }
 
+/* About page — same shell/glow/grid as landing; no separate band colors */
+.about-hero,
+.about-cta {
+  background: transparent;
+  overflow: hidden;
+}
+
+.about-hero {
+  border-bottom: 1px solid var(--app-border);
+}
+
+.about-section {
+  position: relative;
+}
+
+.about-social-link:hover {
+  transform: scale(1.1);
+  border-color: var(--app-brand);
+  color: var(--app-brand);
+  background-color: color-mix(in srgb, var(--app-brand) 12%, var(--app-bg));
+}
+
 .landing-cta {
   animation: landing-fade-up 0.55s ease-out 0.3s both;
 }

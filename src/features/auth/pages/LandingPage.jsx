@@ -13,12 +13,11 @@ import {
   Wrench,
 } from "lucide-react";
 
-import Logo from "../../../components/common/Logo";
-import ThemeToggle from "../../../components/common/ThemeToggle";
 import Spinner from "../../../components/ui/Spinner";
 import { appToast } from "../../../utils/toast";
 import LandingFooter from "../components/LandingFooter";
 import LandingHeroShot from "../components/LandingHeroShot";
+import LandingNav from "../components/LandingNav";
 import LandingPreviewStrip from "../components/LandingPreviewStrip";
 import { googleLogin } from "../services/auth.service";
 
@@ -192,22 +191,7 @@ export default function LandingPage() {
       <div className="auth-shell__glow" aria-hidden="true" />
       <div className="auth-shell__grid" aria-hidden="true" />
 
-      <header className="landing-header fixed inset-x-0 top-0 z-50">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
-          <Logo to="/" size="md" />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={scrollToGetStarted}
-              className="rounded-lg border px-3 py-2 text-sm font-semibold transition hover:opacity-90"
-              style={{ borderColor: "var(--app-border)", color: "var(--app-text)" }}
-            >
-              Sign In
-            </button>
-          </div>
-        </div>
-      </header>
+      <LandingNav onSignIn={scrollToGetStarted} />
 
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 pt-20 md:px-6 md:pt-24">
         {/* Hero */}

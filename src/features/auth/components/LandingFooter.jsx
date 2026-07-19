@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Mail, Rocket } from "lucide-react";
 
 import OpsPilotIcon from "../../../components/common/OpsPilotIcon";
@@ -5,28 +6,28 @@ import config from "../../../config";
 
 const SOCIAL = [
   {
-    label: "Twitter",
-    href: "https://twitter.com/opspilotai",
+    label: "X",
+    href: "https://x.com/bravejeet",
     Icon: IconTwitter,
   },
   {
     label: "LinkedIn",
-    href: "https://linkedin.com/company/opspilot-ai",
+    href: "https://www.linkedin.com/in/jitendrakumarrana/",
     Icon: IconLinkedin,
   },
   {
     label: "Instagram",
-    href: "https://instagram.com/opspilot.ai",
+    href: "https://www.instagram.com/brave_jeet_rana/",
     Icon: IconInstagram,
   },
   {
     label: "GitHub",
-    href: "https://github.com/opspilot-ai",
+    href: "https://github.com/RaNaJitu",
     Icon: IconGithub,
   },
   {
     label: "Email",
-    href: "mailto:hello@opspilot.ai",
+    href: "mailto:jitendra.2609.jk@gmail.com",
     Icon: Mail,
   },
 ];
@@ -120,6 +121,20 @@ export default function LandingFooter() {
             <p className="mt-2 text-xs text-[#64748b]">
               Built for modern DevOps & SRE teams.
             </p>
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+              <Link
+                to="/about"
+                className="inline-flex text-sm font-semibold text-[#60a5fa] transition hover:opacity-90"
+              >
+                About
+              </Link>
+              <Link
+                to="/pricing"
+                className="inline-flex text-sm font-semibold text-[#60a5fa] transition hover:opacity-90"
+              >
+                Pricing
+              </Link>
+            </div>
           </div>
 
           {/* Social */}
@@ -149,12 +164,12 @@ export default function LandingFooter() {
               ))}
             </ul>
             <a
-              href="mailto:hello@opspilot.ai"
+              href="mailto:jitendra.2609.jk@gmail.com"
               className="mt-4 inline-flex items-center gap-1.5 text-sm transition-colors duration-200 hover:text-[#60a5fa] sm:justify-end"
               style={{ color: "#94a3b8" }}
             >
               <Mail size={14} />
-              hello@opspilot.ai
+              jitendra.2609.jk@gmail.com
             </a>
           </div>
         </div>

@@ -4,6 +4,8 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import EmptyLayout from "../layouts/EmptyLayout";
 
 import LandingPage from "../features/auth/pages/LandingPage";
+import AboutPage from "../features/auth/pages/AboutPage";
+import PricingPage from "../features/auth/pages/PricingPage";
 import ProfilePage from "../features/auth/pages/ProfilePage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import SettingsPage from "../features/settings/pages/SettingsPage";
@@ -20,6 +22,8 @@ export default function AppRoutes() {
     <Routes>
       <Route element={<EmptyLayout />}>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<Navigate to="/#get-started" replace />} />
       </Route>
 
