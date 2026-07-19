@@ -4,7 +4,7 @@ import {
   clearIncidentChat,
   getIncidentChat,
   sendIncidentChatMessage,
-} from "../../../services/incident.service";
+} from "../services/chat.service";
 import { chatKeys } from "../utils/queryKeys";
 
 export const useIncidentChatHistory = (incidentId) => {

@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { dashboardKeys } from "../../dashboard/utils/queryKeys";
 import { uploadIncident } from "../services/incident.service";
-import { dashboardKeys } from "../features/dashboard/utils/queryKeys";
-import { incidentKeys } from "../features/incidents/utils/queryKeys";
+import { incidentKeys } from "../utils/queryKeys";
 
 export const useUploadIncident = () => {
   const queryClient = useQueryClient();

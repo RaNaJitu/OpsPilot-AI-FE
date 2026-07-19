@@ -1,11 +1,11 @@
-import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { useMemo } from "react";
 
 import ErrorState from "../../../components/feedback/ErrorState";
 import { useDashboard } from "../hooks/useDashboard";
 import CategoryBarChart from "../components/CategoryBarChart";
 import DashboardSkeleton from "../components/DashboardSkeleton";
 import IncidentTrendChart from "../components/IncidentTrendChart";
+import QuickActions from "../components/QuickActions";
 import RecentIncidentsTable from "../components/RecentIncidentsTable";
 import SeverityPieChart from "../components/SeverityPieChart";
 import StatCards from "../components/StatCards";
@@ -15,29 +15,31 @@ export default function DashboardPage() {
   const { data, isLoading, isError, refetch, isFetching } = useDashboard();
   const dashboard = data?.data;
 
-  return (
-    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8 xl:max-w-[1600px]">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-medium" style={{ color: "var(--app-text-muted)" }}>
-            OpsPilot AI
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
-            Dashboard
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed" style={{ color: "var(--app-text-muted)" }}>
-            Operational overview of incidents, severity, and AI analysis confidence.
-          </p>
-        </div>
+  const { runbookHref, assistantHref } = useMemo(() => {
+    const completed = (dashboard?.recentIncidents ?? []).find(
+      (item) => item.status === "COMPLETED"
+    );
+    if (!completed?.id) {
+      return { runbookHref: "/incidents", assistantHref: "/assistant" };
+    }
+    return {
+      runbookHref: `/incidents/${completed.id}`,
+      assistantHref: `/assistant?incidentId=${completed.id}`,
+    };
+  }, [dashboard?.recentIncidents]);
 
-        <Link
-          to="/upload"
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ backgroundColor: "var(--app-brand)" }}
-        >
-          <Plus size={16} strokeWidth={2.2} />
-          Upload Incident
-        </Link>
+  return (
+    <div className="mx-auto max-w-[1440px] space-y-5 p-4 md:p-6 lg:p-8 xl:max-w-[1600px]">
+      <header>
+        <p className="text-sm font-medium" style={{ color: "var(--app-text-muted)" }}>
+          OpsPilot AI
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
+          Dashboard
+        </h1>
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed" style={{ color: "var(--app-text-muted)" }}>
+          AI-powered Site Reliability Engineering Dashboard
+        </p>
       </header>
 
       {isLoading ? (
@@ -49,12 +51,14 @@ export default function DashboardPage() {
           onRetry={() => refetch()}
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {isFetching && (
             <p className="text-xs" style={{ color: "var(--app-text-muted)" }}>
               Refreshing…
             </p>
           )}
+
+          <QuickActions runbookHref={runbookHref} assistantHref={assistantHref} />
 
           <StatCards summary={dashboard.summary} />
 

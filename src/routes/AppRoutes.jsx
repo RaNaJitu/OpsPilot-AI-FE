@@ -6,7 +6,7 @@ import EmptyLayout from "../layouts/EmptyLayout";
 import LandingPage from "../features/auth/pages/LandingPage";
 import ProfilePage from "../features/auth/pages/ProfilePage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
-import SettingsPage from "../features/dashboard/pages/SettingsPage";
+import SettingsPage from "../features/settings/pages/SettingsPage";
 import IncidentsPage from "../features/incidents/pages/IncidentsPage";
 import IncidentHistoryPage from "../features/incidents/pages/IncidentHistoryPage";
 import UploadIncidentPage from "../features/incidents/pages/UploadIncidentPage";

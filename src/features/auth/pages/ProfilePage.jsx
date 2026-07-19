@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import UserAvatar from "../../../components/common/UserAvatar";
+import ErrorState from "../../../components/feedback/ErrorState";
 import Loading from "../../../components/feedback/Loading";
-import { getProfile } from "../services/auth.service";
+import { useProfile } from "../hooks/useProfile";
 
 function formatJoinedDate(value) {
   if (!value) return "—";
@@ -16,31 +17,29 @@ function formatJoinedDate(value) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const profileQuery = useProfile({ retry: false });
 
   useEffect(() => {
-    let cancelled = false;
+    if (profileQuery.isError) {
+      navigate("/", { replace: true });
+    }
+  }, [profileQuery.isError, navigate]);
 
-    (async () => {
-      try {
-        const { data } = await getProfile();
-        if (!cancelled) setUser(data?.data?.user ?? null);
-      } catch (error) {
-        console.error(error);
-        if (!cancelled) navigate("/", { replace: true });
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+  if (profileQuery.isLoading) return <Loading label="Loading profile..." />;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate]);
+  if (profileQuery.isError || !profileQuery.data) {
+    return (
+      <div className="mx-auto max-w-3xl p-4 md:p-6 lg:p-8">
+        <ErrorState
+          title="Couldn't load profile"
+          description="Your session may have expired."
+          onRetry={() => profileQuery.refetch()}
+        />
+      </div>
+    );
+  }
 
-  if (loading) return <Loading label="Loading profile..." />;
-
+  const user = profileQuery.data;
   const displayName = user?.name ?? "User";
   const email = user?.email ?? "";
 

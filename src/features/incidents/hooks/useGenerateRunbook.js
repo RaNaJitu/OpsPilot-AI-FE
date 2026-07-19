@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { generateIncidentRunbook } from "../services/incident.service";
-import { normalizeRunbook } from "../features/incidents/utils/normalizeIncident";
-import { incidentKeys } from "../features/incidents/utils/queryKeys";
+import { normalizeRunbook } from "../utils/normalizeIncident";
+import { incidentKeys } from "../utils/queryKeys";
 
 export const useGenerateRunbook = (incidentId) => {
   const queryClient = useQueryClient();

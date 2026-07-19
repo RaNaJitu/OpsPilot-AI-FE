@@ -5,9 +5,9 @@ import { Bot, Eraser, MessageSquare } from "lucide-react";
 import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/feedback/ErrorState";
 import Spinner from "../../../components/ui/Spinner";
-import { useIncident } from "../../../hooks/useIncident";
-import { useIncidents } from "../../../hooks/useIncidents";
 import { SeverityBadge, StatusBadge } from "../../incidents/components/IncidentBadges";
+import { useIncident } from "../../incidents/hooks/useIncident";
+import { useIncidents } from "../../incidents/hooks/useIncidents";
 import ChatBubble from "../components/ChatBubble";
 import ChatComposer from "../components/ChatComposer";
 import {

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { getIncidents } from "../services/incident.service";
-import { incidentKeys } from "../features/incidents/utils/queryKeys";
+import { incidentKeys } from "../utils/queryKeys";
 
 export const useIncidents = ({
   page = 1,

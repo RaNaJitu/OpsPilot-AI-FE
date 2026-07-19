@@ -1,50 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Bell, ChevronDown, Menu, Search } from "lucide-react";
 
-import { getProfile, logout } from "../../features/auth/services/auth.service";
+import { useLogout } from "../../features/auth/hooks/useLogout";
+import { useProfile } from "../../features/auth/hooks/useProfile";
 import ThemeToggle from "./ThemeToggle";
 import UserAvatar from "./UserAvatar";
 
 const SEARCH_DEBOUNCE_MS = 400;
-
-function MenuIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M6 9a6 6 0 1 1 12 0c0 3.5 1.5 5 2 6H4c.5-1 2-2.5 2-6z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ChevronDown() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-      <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 export default function TopNavbar({ onMenuClick }) {
   const navigate = useNavigate();
@@ -52,12 +15,21 @@ export default function TopNavbar({ onMenuClick }) {
   const [searchParams] = useSearchParams();
   const menuRef = useRef(null);
 
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const profileQuery = useProfile({
+    retry: false,
+  });
+  const { logoutUser } = useLogout();
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(
     () => searchParams.get("search") || ""
   );
+
+  useEffect(() => {
+    if (profileQuery.isError) {
+      navigate("/", { replace: true });
+    }
+  }, [profileQuery.isError, navigate]);
 
   useEffect(() => {
     if (location.pathname === "/incidents") {
@@ -79,33 +51,12 @@ export default function TopNavbar({ onMenuClick }) {
         return;
       }
 
-      // From other pages: only navigate once the user has typed a query
       if (!next) return;
       navigate(`/incidents?search=${encodeURIComponent(next)}`);
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
   }, [searchInput, location.pathname, searchParams, navigate]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const { data } = await getProfile();
-        if (!cancelled) setUser(data?.data?.user ?? null);
-      } catch (error) {
-        console.error(error);
-        if (!cancelled) navigate("/", { replace: true });
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate]);
 
   useEffect(() => {
     if (!profileOpen) return;
@@ -120,16 +71,8 @@ export default function TopNavbar({ onMenuClick }) {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [profileOpen]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      navigate("/", { replace: true });
-    }
-  };
-
+  const user = profileQuery.data;
+  const loading = profileQuery.isLoading;
   const displayName = user?.name ?? "User";
 
   return (
@@ -148,23 +91,27 @@ export default function TopNavbar({ onMenuClick }) {
           aria-label="Open menu"
           onClick={onMenuClick}
         >
-          <MenuIcon />
+          <Menu size={20} />
         </button>
 
         <label className="relative min-w-0 max-w-md flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--app-text-muted)" }}>
-            <SearchIcon />
+          <span
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: "var(--app-brand)" }}
+          >
+            <Search size={16} />
           </span>
           <input
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search incidents..."
-            className="w-full rounded-lg border py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[var(--app-brand)]"
+            className="w-full rounded-lg border-2 py-2.5 pl-9 pr-3 text-sm font-medium outline-none transition focus:border-[var(--app-brand)]"
             style={{
-              backgroundColor: "var(--app-input-bg)",
-              borderColor: "var(--app-border)",
+              backgroundColor: "var(--app-bg-elevated)",
+              borderColor: "color-mix(in srgb, var(--app-brand) 28%, var(--app-border))",
               color: "var(--app-text)",
+              boxShadow: "0 1px 2px color-mix(in srgb, var(--app-text) 6%, transparent)",
             }}
           />
         </label>
@@ -175,9 +122,11 @@ export default function TopNavbar({ onMenuClick }) {
           type="button"
           className="rounded-lg p-2 transition hover:bg-[var(--app-nav-hover)]"
           aria-label="Notifications"
-          style={{ color: "var(--app-text-muted)" }}
+          title="Notifications coming soon"
+          disabled
+          style={{ color: "var(--app-text-muted)", opacity: 0.55 }}
         >
-          <BellIcon />
+          <Bell size={18} />
         </button>
 
         <ThemeToggle />
@@ -200,7 +149,7 @@ export default function TopNavbar({ onMenuClick }) {
               <UserAvatar name={displayName} avatarUrl={user?.avatar} />
             )}
             <span className="hidden md:inline" style={{ color: "var(--app-text-muted)" }}>
-              <ChevronDown />
+              <ChevronDown size={12} />
             </span>
           </button>
 
@@ -243,7 +192,10 @@ export default function TopNavbar({ onMenuClick }) {
                 role="menuitem"
                 className="block w-full px-4 py-2.5 text-left text-sm"
                 style={{ color: "var(--app-danger)" }}
-                onClick={handleLogout}
+                onClick={() => {
+                  setProfileOpen(false);
+                  logoutUser();
+                }}
               >
                 Sign out
               </button>

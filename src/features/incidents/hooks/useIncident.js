@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { getIncidentById } from "../services/incident.service";
-import { normalizeIncidentDetail } from "../features/incidents/utils/normalizeIncident";
-import { incidentKeys } from "../features/incidents/utils/queryKeys";
+import { normalizeIncidentDetail } from "../utils/normalizeIncident";
+import { incidentKeys } from "../utils/queryKeys";
 
 export const useIncident = (id, options = {}) => {
   return useQuery({

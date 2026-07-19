@@ -6,10 +6,10 @@ import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import Spinner from "../../../components/ui/Spinner";
 import ErrorState from "../../../components/feedback/ErrorState";
 import Loading from "../../../components/feedback/Loading";
-import { useAnalyzeIncident } from "../../../hooks/useAnalyzeIncident";
-import { useDeleteIncident } from "../../../hooks/useDeleteIncident";
-import { useGenerateRunbook } from "../../../hooks/useGenerateRunbook";
-import { useIncident } from "../../../hooks/useIncident";
+import { useAnalyzeIncident } from "../hooks/useAnalyzeIncident";
+import { useDeleteIncident } from "../hooks/useDeleteIncident";
+import { useGenerateRunbook } from "../hooks/useGenerateRunbook";
+import { useIncident } from "../hooks/useIncident";
 import {
   formatFileSize,
   formatIncidentDate,

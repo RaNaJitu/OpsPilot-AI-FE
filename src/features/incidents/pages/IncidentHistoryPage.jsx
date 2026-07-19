@@ -3,7 +3,7 @@ import { Search, X } from "lucide-react";
 
 import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/feedback/ErrorState";
-import { useIncidents } from "../../../hooks/useIncidents";
+import { useIncidents } from "../hooks/useIncidents";
 import HistoryIncidentRow from "../components/HistoryIncidentRow";
 import IncidentListSkeleton from "../components/IncidentListSkeleton";
 

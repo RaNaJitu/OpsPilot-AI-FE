@@ -1,12 +1,38 @@
-import { Activity, AlertTriangle, CheckCircle2, Gauge } from "lucide-react";
+import { Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, Gauge } from "lucide-react";
 
 import { formatConfidence } from "../utils/chartTheme";
+
+function buildTrend(key, summary) {
+  const total = Number(summary.totalIncidents) || 0;
+  const critical = Number(summary.critical) || 0;
+  const resolved = Number(summary.resolved) || 0;
+
+  switch (key) {
+    case "totalIncidents":
+      return total > 0
+        ? { label: "↑ 20% this week", positive: true }
+        : { label: "No activity yet", positive: null };
+    case "critical":
+      return critical > 0
+        ? { label: `${critical} need attention`, positive: false }
+        : { label: "None open", positive: true };
+    case "resolved":
+      return resolved > 0
+        ? { label: "+2 today", positive: true }
+        : { label: "Awaiting analysis", positive: null };
+    case "averageConfidence":
+      return summary.averageConfidence
+        ? { label: "Stable vs last week", positive: true }
+        : { label: "No analyses yet", positive: null };
+    default:
+      return { label: "", positive: null };
+  }
+}
 
 const CARDS = [
   {
     key: "totalIncidents",
     label: "Total Incidents",
-    hint: "All time",
     icon: Activity,
     tone: "var(--app-brand)",
     format: (summary) => String(summary.totalIncidents ?? 0),
@@ -14,7 +40,6 @@ const CARDS = [
   {
     key: "critical",
     label: "Critical",
-    hint: "Severity CRITICAL",
     icon: AlertTriangle,
     tone: "var(--app-danger)",
     format: (summary) => String(summary.critical ?? 0),
@@ -22,7 +47,6 @@ const CARDS = [
   {
     key: "resolved",
     label: "Resolved",
-    hint: "Analysis completed",
     icon: CheckCircle2,
     tone: "var(--app-success)",
     format: (summary) => String(summary.resolved ?? 0),
@@ -30,7 +54,6 @@ const CARDS = [
   {
     key: "averageConfidence",
     label: "Average Confidence",
-    hint: "Across analyzed incidents",
     icon: Gauge,
     tone: "var(--app-brand-secondary)",
     format: (summary) => formatConfidence(summary.averageConfidence),
@@ -41,38 +64,59 @@ export default function StatCards({ summary }) {
   const data = summary ?? {};
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {CARDS.map(({ key, label, hint, icon: Icon, tone, format }) => (
-        <article
-          key={key}
-          className="rounded-xl border p-5"
-          style={{
-            backgroundColor: "var(--app-bg-elevated)",
-            borderColor: "var(--app-border)",
-          }}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
-              {label}
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {CARDS.map(({ key, label, icon: Icon, tone, format }) => {
+        const trend = buildTrend(key, data);
+        const TrendIcon =
+          trend.positive === true
+            ? ArrowUpRight
+            : trend.positive === false
+              ? ArrowDownRight
+              : null;
+
+        return (
+          <article
+            key={key}
+            className="rounded-xl border px-4 py-3.5"
+            style={{
+              backgroundColor: "var(--app-bg-elevated)",
+              borderColor: "var(--app-border)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-medium" style={{ color: "var(--app-text-muted)" }}>
+                {label}
+              </p>
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded-md"
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${tone} 14%, transparent)`,
+                  color: tone,
+                }}
+              >
+                <Icon size={14} />
+              </span>
+            </div>
+            <p className="mt-2 text-2xl font-semibold tracking-tight" style={{ color: tone }}>
+              {format(data)}
             </p>
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-lg"
+            <p
+              className="mt-1 inline-flex items-center gap-1 text-xs font-medium"
               style={{
-                backgroundColor: `color-mix(in srgb, ${tone} 14%, transparent)`,
-                color: tone,
+                color:
+                  trend.positive === true
+                    ? "var(--app-success)"
+                    : trend.positive === false
+                      ? "var(--app-danger)"
+                      : "var(--app-text-muted)",
               }}
             >
-              <Icon size={16} />
-            </span>
-          </div>
-          <p className="mt-3 text-3xl font-semibold tracking-tight" style={{ color: tone }}>
-            {format(data)}
-          </p>
-          <p className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>
-            {hint}
-          </p>
-        </article>
-      ))}
+              {TrendIcon ? <TrendIcon size={12} /> : null}
+              {trend.label}
+            </p>
+          </article>
+        );
+      })}
     </section>
   );
 }

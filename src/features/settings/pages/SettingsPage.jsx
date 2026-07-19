@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import {
   Bot,
   Info,
@@ -14,7 +11,8 @@ import UserAvatar from "../../../components/common/UserAvatar";
 import ErrorState from "../../../components/feedback/ErrorState";
 import Loading from "../../../components/feedback/Loading";
 import config from "../../../config";
-import { getProfile, logout } from "../../auth/services/auth.service";
+import { useLogout } from "../../auth/hooks/useLogout";
+import { useProfile } from "../../auth/hooks/useProfile";
 
 const STACK = [
   "React",
@@ -91,27 +89,8 @@ function ReadOnlyField({ label, value }) {
 }
 
 export default function SettingsPage() {
-  const navigate = useNavigate();
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const profileQuery = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => {
-      const { data } = await getProfile();
-      return data?.data?.user ?? null;
-    },
-  });
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      await logout();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      navigate("/", { replace: true });
-    }
-  };
+  const profileQuery = useProfile({ retry: false });
+  const { logoutUser, isLoggingOut } = useLogout();
 
   if (profileQuery.isLoading) {
     return <Loading label="Loading settings..." />;
@@ -182,8 +161,8 @@ export default function SettingsPage() {
         </p>
         <button
           type="button"
-          disabled={loggingOut}
-          onClick={handleLogout}
+          disabled={isLoggingOut}
+          onClick={logoutUser}
           className="inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-60"
           style={{
             borderColor: "color-mix(in srgb, var(--app-danger) 40%, var(--app-border))",
@@ -192,7 +171,7 @@ export default function SettingsPage() {
           }}
         >
           <LogOut size={15} />
-          {loggingOut ? "Signing out…" : "Logout"}
+          {isLoggingOut ? "Signing out…" : "Logout"}
         </button>
       </SettingsSection>
 

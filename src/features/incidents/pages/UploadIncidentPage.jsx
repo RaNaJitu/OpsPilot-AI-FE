@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, X } from "lucide-react";
 
-import { useUploadIncident } from "../../../hooks/useUploadIncident";
+import { useUploadIncident } from "../hooks/useUploadIncident";
 import UploadZone, { validateLogFile } from "../components/UploadZone";
 
 function formatBytes(bytes) {

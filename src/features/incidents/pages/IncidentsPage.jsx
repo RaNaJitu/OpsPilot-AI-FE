@@ -5,8 +5,8 @@ import { Plus, Search } from "lucide-react";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/feedback/ErrorState";
-import { useDeleteIncident } from "../../../hooks/useDeleteIncident";
-import { useIncidents } from "../../../hooks/useIncidents";
+import { useDeleteIncident } from "../hooks/useDeleteIncident";
+import { useIncidents } from "../hooks/useIncidents";
 import IncidentCard from "../components/IncidentCard";
 import IncidentListSkeleton from "../components/IncidentListSkeleton";
 
