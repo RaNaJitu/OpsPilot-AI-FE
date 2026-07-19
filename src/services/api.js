@@ -13,6 +13,12 @@ const AUTH_SKIP_REFRESH = [
   "/auth/logout",
 ];
 
+/** Only expired/invalid access tokens should trigger refresh — not "not logged in". */
+const REFRESHABLE_401_CODES = new Set([
+  "INVALID_ACCESS_TOKEN",
+  "TOKEN_EXPIRED",
+]);
+
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -27,6 +33,8 @@ const processQueue = (error) => {
 const shouldSkipRefresh = (url = "") =>
   AUTH_SKIP_REFRESH.some((path) => url.includes(path));
 
+const isRefreshableAuthError = (code) => REFRESHABLE_401_CODES.has(code);
+
 const redirectToLogin = () => {
   if (window.location.pathname !== "/") {
     window.location.assign("/");
@@ -38,12 +46,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+    const errorCode = error.response?.data?.code || null;
 
     if (
       status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
-      shouldSkipRefresh(originalRequest.url)
+      shouldSkipRefresh(originalRequest.url) ||
+      !isRefreshableAuthError(errorCode)
     ) {
       return Promise.reject(error);
     }
