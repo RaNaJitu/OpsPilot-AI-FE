@@ -108,23 +108,69 @@ html.dark .auth-shell__grid {
   }
 }
 
+/* Landing — fixed glass header (blur only, no tint / bottom line) */
+.landing-header {
+  background-color: transparent;
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+
 .landing-hero {
   animation: landing-fade-up 0.55s ease-out both;
 }
 
-.landing-features {
-  animation: landing-fade-up 0.55s ease-out 0.12s both;
+.landing-hero-visual {
+  animation: landing-fade-up 0.65s ease-out 0.1s both;
 }
 
-.landing-signin {
+.landing-trust {
+  animation: landing-fade-up 0.55s ease-out 0.14s both;
+}
+
+.landing-steps {
+  animation: landing-fade-up 0.55s ease-out 0.18s both;
+}
+
+.landing-features {
   animation: landing-fade-up 0.55s ease-out 0.22s both;
+}
+
+.landing-previews {
+  animation: landing-fade-up 0.55s ease-out 0.26s both;
+}
+
+.landing-cta {
+  animation: landing-fade-up 0.55s ease-out 0.3s both;
+}
+
+.landing-mockup {
+  transform: perspective(1200px) rotateY(-2deg) rotateX(2deg);
+  transition: transform 0.45s ease;
+}
+
+.landing-mockup:hover {
+  transform: perspective(1200px) rotateY(0deg) rotateX(0deg);
+}
+
+@media (max-width: 767px) {
+  .landing-mockup {
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .landing-hero,
+  .landing-hero-visual,
+  .landing-trust,
+  .landing-steps,
   .landing-features,
-  .landing-signin {
+  .landing-previews,
+  .landing-cta,
+  .landing-mockup,
+  .landing-mockup:hover {
     animation: none;
+    transform: none;
+    transition: none;
   }
 }
 

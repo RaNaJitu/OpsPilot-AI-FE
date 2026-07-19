@@ -18,7 +18,7 @@ export default function AppRoutes() {
     <Routes>
       <Route element={<EmptyLayout />}>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Navigate to="/#sign-in" replace />} />
+        <Route path="/login" element={<Navigate to="/#get-started" replace />} />
       </Route>
 
       <Route element={<DashboardLayout />}>
