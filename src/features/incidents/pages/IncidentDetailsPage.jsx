@@ -16,6 +16,7 @@ import {
   formatRelativeTime,
   shortIncidentId,
 } from "../utils/incidentFormat";
+import { formatConfidenceLabel } from "../utils/incidentCard";
 import { exportIncidentPdf } from "../utils/exportIncidentPdf";
 import { SeverityBadge, StatusBadge } from "../components/IncidentBadges";
 import AiAnalysisCard from "../components/AiAnalysisCard";
@@ -42,6 +43,7 @@ export default function IncidentDetailsPage() {
   const runbookMutation = useGenerateRunbook(incidentId);
 
   const incident = data?.data;
+  const confidence = incident ? formatConfidenceLabel(incident.confidence) : null;
   const isAnalyzing =
     analyzeMutation.isPending || incident?.status === "ANALYZING";
   const canUseAiExtras = incident?.status === "COMPLETED";
@@ -119,6 +121,22 @@ export default function IncidentDetailsPage() {
             Incidents
           </Link>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">{incident.title}</h1>
+          {confidence && (
+            <p className="mt-1.5 text-sm">
+              <span
+                className="text-[11px] font-semibold uppercase tracking-wide"
+                style={{ color: "var(--app-text-muted)" }}
+              >
+                AI Confidence
+              </span>
+              <span className="ml-2 font-semibold" style={{ color: confidence.tone }}>
+                <span aria-hidden="true">{confidence.emoji}</span> {confidence.percent}{" "}
+                <span className="font-medium" style={{ color: "var(--app-text-muted)" }}>
+                  {confidence.level}
+                </span>
+              </span>
+            </p>
+          )}
           <p className="mt-1.5 text-sm" style={{ color: "var(--app-text-muted)" }}>
             ID #{shortIncidentId(incident.id)}
             <span className="mx-2 opacity-40">·</span>

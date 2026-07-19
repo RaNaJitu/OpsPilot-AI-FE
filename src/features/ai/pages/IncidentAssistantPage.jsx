@@ -1,15 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Bot, Eraser, MessageSquare } from "lucide-react";
+import { Bot, Eraser, FileText, MessageSquare } from "lucide-react";
 
 import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/feedback/ErrorState";
 import Spinner from "../../../components/ui/Spinner";
-import { SeverityBadge, StatusBadge } from "../../incidents/components/IncidentBadges";
+import {
+  CategoryBadge,
+  SeverityBadge,
+  StatusBadge,
+} from "../../incidents/components/IncidentBadges";
 import { useIncident } from "../../incidents/hooks/useIncident";
 import { useIncidents } from "../../incidents/hooks/useIncidents";
+import {
+  getPrimaryService,
+  truncateSummary,
+} from "../../incidents/utils/incidentCard";
+import {
+  formatIncidentDate,
+  formatRelativeTime,
+} from "../../incidents/utils/incidentFormat";
 import ChatBubble from "../components/ChatBubble";
 import ChatComposer from "../components/ChatComposer";
+import ChatEmptyState from "../components/ChatEmptyState";
+import ConfidenceLabel from "../components/ConfidenceLabel";
+import TypingIndicator from "../components/TypingIndicator";
 import {
   useClearIncidentChat,
   useIncidentChatHistory,
@@ -24,10 +39,27 @@ function getChatErrorMessage(error) {
   );
 }
 
+function HeaderMeta({ label, children }) {
+  if (!children) return null;
+  return (
+    <div className="min-w-0">
+      <p
+        className="text-[10px] font-semibold uppercase tracking-wide"
+        style={{ color: "var(--app-text-muted)" }}
+      >
+        {label}
+      </p>
+      <div className="mt-0.5 text-xs font-medium">{children}</div>
+    </div>
+  );
+}
+
 export default function IncidentAssistantPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedId = searchParams.get("incidentId") || "";
   const [sendError, setSendError] = useState("");
+  const [draft, setDraft] = useState("");
+  const [pendingUserMessage, setPendingUserMessage] = useState("");
   const bottomRef = useRef(null);
 
   const incidentsQuery = useIncidents({ page: 1, limit: 50, search: "" });
@@ -47,14 +79,18 @@ export default function IncidentAssistantPage() {
 
   const selectedDetailQuery = useIncident(activeIncidentId || undefined);
   const selectedIncident =
-    selectedFromList || selectedDetailQuery.data?.data || null;
+    selectedDetailQuery.data?.data || selectedFromList || null;
 
   const historyQuery = useIncidentChatHistory(activeIncidentId || undefined);
   const sendMutation = useSendIncidentChat(activeIncidentId);
   const clearMutation = useClearIncidentChat(activeIncidentId);
 
   const messages = historyQuery.data?.data ?? [];
-  const [pendingUserMessage, setPendingUserMessage] = useState("");
+  const service = getPrimaryService(selectedIncident);
+  const headerSummary = truncateSummary(
+    selectedIncident?.summary || selectedIncident?.rootCause,
+    180
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,6 +99,7 @@ export default function IncidentAssistantPage() {
   const selectIncident = (id) => {
     setSendError("");
     setPendingUserMessage("");
+    setDraft("");
     if (!id) {
       setSearchParams({});
       return;
@@ -74,6 +111,7 @@ export default function IncidentAssistantPage() {
     if (!activeIncidentId) return;
     setSendError("");
     setPendingUserMessage(message);
+    setDraft("");
     sendMutation.mutate(message, {
       onSettled: () => setPendingUserMessage(""),
       onError: (error) => setSendError(getChatErrorMessage(error)),
@@ -84,6 +122,14 @@ export default function IncidentAssistantPage() {
     historyQuery.isError &&
     (historyQuery.error?.response?.data?.code === "ANALYSIS_REQUIRED" ||
       historyQuery.error?.response?.status === 400);
+
+  const showEmptyConversation =
+    Boolean(activeIncidentId) &&
+    !historyQuery.isLoading &&
+    !historyBlocked &&
+    !historyQuery.isError &&
+    messages.length === 0 &&
+    !pendingUserMessage;
 
   return (
     <div className="mx-auto flex h-[calc(100vh-3.5rem)] max-w-[1440px] flex-col gap-4 p-4 md:p-6 lg:p-8 xl:max-w-[1600px]">
@@ -99,8 +145,7 @@ export default function IncidentAssistantPage() {
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-        {/* Incident picker */}
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
         <aside
           className="flex min-h-0 flex-col rounded-xl border"
           style={{
@@ -109,7 +154,10 @@ export default function IncidentAssistantPage() {
           }}
         >
           <div className="border-b px-4 py-3" style={{ borderColor: "var(--app-border)" }}>
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--app-text-muted)" }}>
+            <p
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: "var(--app-text-muted)" }}
+            >
               Incident
             </p>
             <select
@@ -148,20 +196,46 @@ export default function IncidentAssistantPage() {
               <ul className="space-y-2">
                 {analyzedIncidents.map((incident) => {
                   const active = incident.id === activeIncidentId;
+                  const itemService = getPrimaryService(incident);
+                  const shortDate = formatIncidentDate(incident.createdAt);
+                  const relative = formatRelativeTime(incident.createdAt);
+
                   return (
                     <li key={incident.id}>
                       <button
                         type="button"
                         onClick={() => selectIncident(incident.id)}
-                        className="w-full rounded-lg border px-3 py-2.5 text-left transition"
+                        className={`w-full rounded-lg border px-3 py-2.5 text-left transition${
+                          active ? " assistant-incident-active" : ""
+                        }`}
                         style={{
                           borderColor: active ? "var(--app-brand)" : "var(--app-border)",
-                          backgroundColor: active
-                            ? "color-mix(in srgb, var(--app-brand) 10%, transparent)"
-                            : "transparent",
+                          backgroundColor: active ? undefined : "transparent",
                         }}
                       >
-                        <p className="truncate text-sm font-medium">{incident.title}</p>
+                        {shortDate && shortDate !== "—" && (
+                          <p
+                            className="text-[10px] font-semibold uppercase tracking-wide"
+                            style={{ color: "var(--app-text-muted)" }}
+                          >
+                            {shortDate}
+                          </p>
+                        )}
+                        <p className="mt-0.5 truncate text-sm font-semibold">{incident.title}</p>
+
+                        <div
+                          className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]"
+                          style={{ color: "var(--app-text-muted)" }}
+                        >
+                          {itemService && <span className="font-mono">{itemService}</span>}
+                          {itemService && relative && <span>·</span>}
+                          {relative && <span>{relative}</span>}
+                          {(itemService || relative) && incident.confidence != null && (
+                            <span>·</span>
+                          )}
+                          <ConfidenceLabel value={incident.confidence} compact />
+                        </div>
+
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <SeverityBadge severity={incident.severity} />
                           <StatusBadge status={incident.status} />
@@ -175,7 +249,6 @@ export default function IncidentAssistantPage() {
           </div>
         </aside>
 
-        {/* Chat panel */}
         <section
           className="flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-xl border lg:min-h-0"
           style={{
@@ -184,43 +257,110 @@ export default function IncidentAssistantPage() {
           }}
         >
           <div
-            className="flex items-start justify-between gap-3 border-b px-4 py-3 md:px-5"
+            className="border-b px-4 py-3 md:px-5"
             style={{ borderColor: "var(--app-border)" }}
           >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <Bot size={18} style={{ color: "var(--app-brand)" }} />
-                <h2 className="truncate text-base font-semibold">
-                  {selectedIncident?.title || "AI Assistant"}
-                </h2>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <Bot size={18} style={{ color: "var(--app-brand)" }} />
+                  <h2 className="truncate text-base font-semibold">
+                    {selectedIncident?.title || "AI Incident Assistant"}
+                  </h2>
+                </div>
+                <p className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>
+                  {activeIncidentId
+                    ? "Answers use this incident’s summary, root cause, timeline, and evidence."
+                    : "Select an incident to begin."}
+                </p>
               </div>
-              <p className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>
-                {activeIncidentId
-                  ? "Answers use this incident’s summary, root cause, timeline, and evidence."
-                  : "Select an incident to begin."}
-              </p>
+
+              {activeIncidentId && (
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link
+                    to={`/incidents/${activeIncidentId}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition hover:opacity-80"
+                    style={{
+                      borderColor: "var(--app-border)",
+                      color: "var(--app-brand)",
+                      backgroundColor: "color-mix(in srgb, var(--app-brand) 6%, transparent)",
+                    }}
+                  >
+                    <FileText size={13} />
+                    Incident Details
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={clearMutation.isPending || messages.length === 0}
+                    onClick={() => clearMutation.mutate()}
+                    className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition hover:opacity-80 disabled:opacity-40"
+                    style={{ borderColor: "var(--app-border)", color: "var(--app-text-muted)" }}
+                    title="Clear conversation"
+                  >
+                    <Eraser size={13} />
+                    Clear
+                  </button>
+                </div>
+              )}
             </div>
 
-            {activeIncidentId && (
-              <div className="flex shrink-0 items-center gap-2">
-                <Link
-                  to={`/incidents/${activeIncidentId}`}
-                  className="text-xs font-medium"
-                  style={{ color: "var(--app-brand)" }}
+            {selectedIncident && activeIncidentId && (
+              <div className="mt-3 space-y-2.5">
+                <div
+                  className="grid gap-3 rounded-lg border px-3 py-2.5 sm:grid-cols-2 lg:grid-cols-4"
+                  style={{ borderColor: "var(--app-border)" }}
                 >
-                  View details
-                </Link>
-                <button
-                  type="button"
-                  disabled={clearMutation.isPending || messages.length === 0}
-                  onClick={() => clearMutation.mutate()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition hover:opacity-80 disabled:opacity-40"
-                  style={{ borderColor: "var(--app-border)", color: "var(--app-text-muted)" }}
-                  title="Clear conversation"
-                >
-                  <Eraser size={13} />
-                  Clear
-                </button>
+                  <HeaderMeta label="Category">
+                    <CategoryBadge category={selectedIncident.category} />
+                    {!selectedIncident.category && (
+                      <span style={{ color: "var(--app-text-muted)" }}>—</span>
+                    )}
+                  </HeaderMeta>
+                  <HeaderMeta label="Affected Service">
+                    {service ? (
+                      <span className="font-mono">{service}</span>
+                    ) : (
+                      <span style={{ color: "var(--app-text-muted)" }}>—</span>
+                    )}
+                  </HeaderMeta>
+                  <HeaderMeta label="Severity">
+                    <SeverityBadge severity={selectedIncident.severity} />
+                    {!selectedIncident.severity && (
+                      <span style={{ color: "var(--app-text-muted)" }}>—</span>
+                    )}
+                  </HeaderMeta>
+                  <HeaderMeta label="Confidence">
+                    <ConfidenceLabel value={selectedIncident.confidence} />
+                    {selectedIncident.confidence == null && (
+                      <span style={{ color: "var(--app-text-muted)" }}>—</span>
+                    )}
+                  </HeaderMeta>
+                </div>
+
+                {headerSummary && (
+                  <div
+                    className="rounded-lg border px-3 py-2.5"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--app-brand) 20%, var(--app-border))",
+                      backgroundColor:
+                        "color-mix(in srgb, var(--app-brand) 5%, transparent)",
+                    }}
+                  >
+                    <p
+                      className="text-[10px] font-semibold uppercase tracking-wide"
+                      style={{ color: "var(--app-brand)" }}
+                    >
+                      Summary
+                    </p>
+                    <p
+                      className="mt-1.5 line-clamp-3 text-[13.5px] font-semibold leading-relaxed tracking-[-0.01em]"
+                      style={{ color: "var(--app-text)" }}
+                    >
+                      {headerSummary}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -240,7 +380,7 @@ export default function IncidentAssistantPage() {
                 <div>
                   <p className="text-base font-semibold">Hello 👋</p>
                   <p className="mt-1 text-sm" style={{ color: "var(--app-text-muted)" }}>
-                    Ask anything about a selected incident.
+                    Select an incident on the left to start asking questions.
                   </p>
                 </div>
               </div>
@@ -263,13 +403,8 @@ export default function IncidentAssistantPage() {
                 description={getChatErrorMessage(historyQuery.error)}
                 onRetry={() => historyQuery.refetch()}
               />
-            ) : messages.length === 0 && !pendingUserMessage ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-                <p className="text-base font-semibold">Hello 👋</p>
-                <p className="max-w-sm text-sm" style={{ color: "var(--app-text-muted)" }}>
-                  Ask anything about this incident — root cause, timeline, fixes, or prevention.
-                </p>
-              </div>
+            ) : showEmptyConversation ? (
+              <ChatEmptyState onSelectPrompt={setDraft} />
             ) : (
               <>
                 {messages.map((item) => (
@@ -278,17 +413,15 @@ export default function IncidentAssistantPage() {
                 {pendingUserMessage && (
                   <ChatBubble role="USER" message={pendingUserMessage} />
                 )}
-                {sendMutation.isPending && (
-                  <div className="flex items-center gap-2 text-sm" style={{ color: "var(--app-text-muted)" }}>
-                    <Spinner size="sm" />
-                    Assistant is thinking…
-                  </div>
-                )}
+                {sendMutation.isPending && <TypingIndicator />}
               </>
             )}
 
             {sendError && (
-              <p className="rounded-lg border px-3 py-2 text-sm" style={{ borderColor: "var(--app-danger)", color: "var(--app-danger)" }}>
+              <p
+                className="rounded-lg border px-3 py-2 text-sm"
+                style={{ borderColor: "var(--app-danger)", color: "var(--app-danger)" }}
+              >
                 {sendError}
               </p>
             )}
@@ -300,6 +433,9 @@ export default function IncidentAssistantPage() {
             disabled={!activeIncidentId || historyBlocked}
             sending={sendMutation.isPending}
             onSend={handleSend}
+            draftValue={draft}
+            onDraftChange={setDraft}
+            showSuggestions={Boolean(activeIncidentId) && !historyBlocked}
           />
         </section>
       </div>

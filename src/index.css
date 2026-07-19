@@ -127,3 +127,18 @@ html.dark .auth-shell__grid {
     animation: none;
   }
 }
+
+/* Incident Assistant — selected sidebar card */
+.assistant-incident-active {
+  background-color: #f6f9ff;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--app-brand) 12%, transparent),
+    0 4px 12px color-mix(in srgb, var(--app-brand) 10%, transparent);
+}
+
+html.dark .assistant-incident-active {
+  background-color: color-mix(in srgb, var(--app-brand) 16%, var(--app-bg-elevated));
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 25%),
+    0 4px 14px color-mix(in srgb, var(--app-brand) 18%, transparent);
+}

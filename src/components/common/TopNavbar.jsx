@@ -31,28 +31,31 @@ export default function TopNavbar({ onMenuClick }) {
     }
   }, [profileQuery.isError, navigate]);
 
+  // Keep navbar in sync when URL search changes (e.g. browser back/forward).
   useEffect(() => {
-    if (location.pathname === "/incidents") {
-      setSearchInput(searchParams.get("search") || "");
-    }
+    if (location.pathname !== "/incidents") return;
+    setSearchInput(searchParams.get("search") || "");
   }, [location.pathname, searchParams]);
 
+  // Global search: always resolves on the Incidents page.
   useEffect(() => {
     const next = searchInput.trim();
     const timer = setTimeout(() => {
-      if (location.pathname === "/incidents") {
-        const current = searchParams.get("search") || "";
-        if (current === next) return;
-        if (next) {
-          navigate(`/incidents?search=${encodeURIComponent(next)}`, { replace: true });
-        } else {
-          navigate("/incidents", { replace: true });
-        }
+      const onIncidents = location.pathname === "/incidents";
+      const current = onIncidents ? searchParams.get("search") || "" : "";
+
+      if (onIncidents && current === next) return;
+
+      if (next) {
+        navigate(`/incidents?search=${encodeURIComponent(next)}`, {
+          replace: onIncidents,
+        });
         return;
       }
 
-      if (!next) return;
-      navigate(`/incidents?search=${encodeURIComponent(next)}`);
+      if (onIncidents) {
+        navigate("/incidents", { replace: true });
+      }
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
@@ -105,7 +108,8 @@ export default function TopNavbar({ onMenuClick }) {
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search by title, service or category..."
+            placeholder="Search incidents, services, categories..."
+            aria-label="Global search"
             className="w-full rounded-lg border-2 py-2.5 pl-9 pr-3 text-sm font-medium outline-none transition focus:border-[var(--app-brand)]"
             style={{
               backgroundColor: "var(--app-bg-elevated)",
